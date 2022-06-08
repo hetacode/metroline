@@ -4,6 +4,10 @@ export interface Env {
 
 export type IncludeCondition = { include: string[] };
 export type ExcludeCondition = { exclude: string[] };
+export type TagCondition =
+  string[]
+  | IncludeCondition
+  | ExcludeCondition;
 export type BranchCondition =
   string[]
   | IncludeCondition
@@ -16,6 +20,7 @@ export type StatusCondition =
 export interface WhenConditions {
   propagate?: boolean;
   branch?: BranchCondition;
+  tag?: TagCondition;
   status?: StatusCondition;
 }
 

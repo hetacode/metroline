@@ -9,6 +9,7 @@ import { canExecWhenStatus } from '../ci-config/conditions/can-exec-when-status'
 import { Logger } from '../../commons/logger/logger';
 import { canExecWhenBranch } from '../ci-config/conditions/can-exec-when-branch';
 import { Pipeline } from '../../commons/types/pipeline';
+import { canExecWhenTag } from '../ci-config/conditions/can-exec-when-tag';
 
 const logger = new Logger('metroline.server:updateDownstreamJob');
 
@@ -25,10 +26,21 @@ export async function updateDownstreamJob(job: Job, jobs: Job[], pipeline: Pipel
 
   logger.debug(`Updating job ${chalk.blue(job.name)} with upstream status ${chalk.blue(upstreamStatus)}`);
 
-  const skip = (
+  // Check two separated conditions:
+  // - for branch
+  // - for tag
+  //
+  // If branch is set to skip, try check tag condition
+  const skipBranch = (
     !canExecWhenStatus(upstreamStatus, job.when?.status)
     || !canExecWhenBranch(pipeline.commit.branch, job.when?.branch)
   );
+  const skipTags = (
+    !canExecWhenStatus(upstreamStatus, job.when?.status)
+    || !canExecWhenTag(pipeline.commit.tag, job.when?.tag)
+  );
+
+  const skip = skipBranch ? skipTags : skipBranch; // skipBranch or skipTags
 
   if (skip) {
     logger.debug(`Skipping job ${chalk.blue(job.name)} as its upstream status ${chalk.blue(upstreamStatus)}`);
