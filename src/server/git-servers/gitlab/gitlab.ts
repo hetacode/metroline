@@ -111,7 +111,7 @@ function convertPipelineStatus(status: PipelineStatus): GitlabCommitStatus {
     case 'success':
       return 'success';
     case 'partial':
-      // TODO how to display "warning" sign like gitlab does with allow_failure ?
+      // TODO how to display 'warning' sign like gitlab does with allow_failure ?
       return 'success';
     case 'skipped':
     case 'cancelled':
@@ -216,6 +216,7 @@ export class Gitlab implements GitServer {
       message: branch.commit.message,
       author: branch.commit.author_name,
       branch: branch.name,
+      tag: '', // TODO
       protectedBranch: branch.protected,
     };
   }
@@ -300,6 +301,7 @@ export class Gitlab implements GitServer {
         message: commit.title,
         author: payload.user_username,
         branch: branchName,
+        tag: '', // TODO
         protectedBranch: branch.protected,
       },
     };

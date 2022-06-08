@@ -3,6 +3,7 @@ import { Job } from '../../commons/types/job';
 import { Pipeline } from '../../commons/types/pipeline';
 import { canExecWhenBranch } from './conditions/can-exec-when-branch';
 import { Logger } from '../../commons/logger/logger';
+import { canExecWhenTag } from './conditions/can-exec-when-tag';
 
 const logger = new Logger('metroline.server:skipJobsBasedOnConditions');
 
@@ -21,7 +22,10 @@ function getDownstreamJobs(job: Job, jobs: Job[]): Job[] {
 
 export function skipJobsBasedOnConditions(pipeline: Pipeline, jobs: Job[]) {
   jobs.forEach(job => {
-    if (!canExecWhenBranch(pipeline.commit.branch, job.when?.branch)) {
+    let skip = !canExecWhenBranch(pipeline.commit.branch, job.when?.branch);
+    skip = skip ? !canExecWhenTag(pipeline.commit.tag, job.when?.tag) : skip;
+
+    if (skip) {
       job.status = 'skipped';
       if (job.when?.propagate) {
         const downstreamJobs = getDownstreamJobs(job, jobs);

@@ -23,6 +23,7 @@ import { Logger } from '../../../commons/logger/logger';
 import { GiteaPushWebhookPayload } from './types/gitea-push-webhook-payload';
 import { GiteaRepoList } from './types/gitea-repo-list';
 import { ensureStackTrace } from '../../../commons/axios/ensure-stack-trace';
+import { GiteaCommit } from './types/gitea-commit';
 
 const logger = new Logger('metroline.server:gitea');
 
@@ -75,9 +76,10 @@ const $user = object({
 const $orgs = array().items(object({ username: string().required() }));
 
 const $webhookPayload = object({
+  before: string(),
   after: string().required(),
   ref: string().required(),
-  commits: array().min(1).items(object({
+  commits: array().min(0).items(object({
     id: string().required(),
     url: string().required(),
     message: string().required(),
@@ -88,7 +90,11 @@ const $webhookPayload = object({
   }),
   sender: object({ login: string().required() }),
 }).custom(value => {
-  const { commits } = value;
+  const { commits, before } = value;
+  console.debug(value);
+  if (before === '0000000000000000000000000000000000000000') {
+    return value;
+  }
   const commit = commits.find(c => c.id === value.after);
   if (!commit) {
     throw new Error(`Commit with id ${value.after} not found`);
@@ -195,6 +201,7 @@ export class Gitea implements GitServer {
        */
       author: branch.commit.author.name,
       branch: branch.name,
+      tag: '',
       protectedBranch: branch.protected,
     };
   }
@@ -273,8 +280,33 @@ export class Gitea implements GitServer {
       return { error };
     }
 
-    const commit = payload.commits.find(c => c.id === payload.after);
+    // Recognize types of webhook
+    // 1. tag
+    // 2. branch
     const repoId = payload.repository.full_name;
+    if (payload.ref.startsWith('refs/tags')) {
+      if (payload.after === '0000000000000000000000000000000000000000') {
+        return { error: new ValidationError('tag has been deleted - ignore', null, null) };
+      }
+
+      const commit = await this.getCommit(repoId, payload.after);
+      const tagName = payload.ref.replace('refs/tags/', '');
+      return {
+        commit: {
+          repoId,
+          sha: commit.sha,
+          url: commit.url,
+          gitSshUrl: payload.repository.ssh_url,
+          message: commit.commit.message,
+          branch: '',
+          tag: tagName,
+          protectedBranch: false,
+          author: payload.sender.login,
+        },
+      };
+    }
+
+    const commit = payload.commits.find(c => c.id === payload.after);
     const branchName = payload.ref.replace('refs/heads/', '');
     const branch = await this.getBranch(repoId, branchName).catch(err => {
       logger.error(`Could not get branch to build commit. Has the OAuth token of repo ${repoId} expired ?`, err);
@@ -289,6 +321,7 @@ export class Gitea implements GitServer {
         gitSshUrl: payload.repository.ssh_url,
         message: commit.message,
         branch: branchName,
+        tag: '',
         protectedBranch: branch.protected,
         author: payload.sender.login,
       },
@@ -353,5 +386,10 @@ export class Gitea implements GitServer {
     // https://try.gitea.io/api/swagger#/repository/repoGetBranch
     return this.axios.get<GiteaBranch>(`/api/v1/repos/${repoId}/branches/${encodeURIComponent(branchName)}`)
       .then<GiteaBranch>(({ data }) => $branch.validateAsync(data, JOI_OPTIONS));
+  }
+
+  private getCommit(repoId: string, sha: string): Promise<GiteaCommit> {
+    return this.axios.get<GiteaCommit>(`/api/v1/repos/${repoId}/git/commits/${sha}`)
+      .then<GiteaCommit>(({ data }) => data as GiteaCommit);
   }
 }
