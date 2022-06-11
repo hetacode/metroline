@@ -5,6 +5,7 @@ export interface Commit {
   author: string;
   branch: string;
   tag: string;
+  pathsChanged: string[];
   protectedBranch: boolean;
   repoId: string;
   gitSshUrl: string;

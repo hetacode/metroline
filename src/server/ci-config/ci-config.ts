@@ -4,6 +4,10 @@ export interface Env {
 
 export type IncludeCondition = { include: string[] };
 export type ExcludeCondition = { exclude: string[] };
+export type PathCondition =
+  string[]
+  | IncludeCondition
+  | ExcludeCondition;
 export type TagCondition =
   string[]
   | IncludeCondition
@@ -21,6 +25,7 @@ export interface WhenConditions {
   propagate?: boolean;
   branch?: BranchCondition;
   tag?: TagCondition;
+  path?: PathCondition;
   status?: StatusCondition;
 }
 

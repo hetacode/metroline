@@ -2,8 +2,10 @@ version: "3"
 
 services:
   gitea:
-    image: gitea/gitea:1.12.5
+    image: gitea/gitea:1.16.8
     restart: unless-stopped
+    environment:
+      - GITEA__webhook__ALLOWED_HOST_LIST=*
     volumes:
       - ./data/gitea:/data
     ports:
