@@ -83,6 +83,9 @@ const $webhookPayload = object({
     id: string().required(),
     url: string().required(),
     message: string().required(),
+    added: array(),
+    removed: array(),
+    modified: array(),
   })),
   repository: object({
     full_name: string().required(),
@@ -91,7 +94,6 @@ const $webhookPayload = object({
   sender: object({ login: string().required() }),
 }).custom(value => {
   const { commits, before } = value;
-  console.debug(value);
   if (before === '0000000000000000000000000000000000000000') {
     return value;
   }
@@ -202,6 +204,7 @@ export class Gitea implements GitServer {
       author: branch.commit.author.name,
       branch: branch.name,
       tag: '',
+      pathsChanged: [],
       protectedBranch: branch.protected,
     };
   }
@@ -299,6 +302,7 @@ export class Gitea implements GitServer {
           gitSshUrl: payload.repository.ssh_url,
           message: commit.commit.message,
           branch: '',
+          pathsChanged: [],
           tag: tagName,
           protectedBranch: false,
           author: payload.sender.login,
@@ -307,6 +311,7 @@ export class Gitea implements GitServer {
     }
 
     const commit = payload.commits.find(c => c.id === payload.after);
+    const pathsChanged = (commit.added ?? []).concat((commit.removed ?? []).concat(commit.modified ?? []));
     const branchName = payload.ref.replace('refs/heads/', '');
     const branch = await this.getBranch(repoId, branchName).catch(err => {
       logger.error(`Could not get branch to build commit. Has the OAuth token of repo ${repoId} expired ?`, err);
@@ -321,6 +326,7 @@ export class Gitea implements GitServer {
         gitSshUrl: payload.repository.ssh_url,
         message: commit.message,
         branch: branchName,
+        pathsChanged,
         tag: '',
         protectedBranch: branch.protected,
         author: payload.sender.login,

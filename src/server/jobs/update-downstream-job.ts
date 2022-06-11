@@ -10,6 +10,7 @@ import { Logger } from '../../commons/logger/logger';
 import { canExecWhenBranch } from '../ci-config/conditions/can-exec-when-branch';
 import { Pipeline } from '../../commons/types/pipeline';
 import { canExecWhenTag } from '../ci-config/conditions/can-exec-when-tag';
+import { canExecWhenPath } from '../ci-config/conditions/can-exec-when-path';
 
 const logger = new Logger('metroline.server:updateDownstreamJob');
 
@@ -29,19 +30,18 @@ export async function updateDownstreamJob(job: Job, jobs: Job[], pipeline: Pipel
   // Check two separated conditions:
   // - for branch
   // - for tag
+  // - for path
   //
   // If branch is set to skip, try check tag condition
-  const skipBranch = (
-    !canExecWhenStatus(upstreamStatus, job.when?.status)
-    || !canExecWhenBranch(pipeline.commit.branch, job.when?.branch)
-  );
-  const skipTags = (
-    !canExecWhenStatus(upstreamStatus, job.when?.status)
-    || !canExecWhenTag(pipeline.commit.tag, job.when?.tag)
-  );
+  const skips: { ignore: boolean, skip: boolean }[] = [
+    { ignore: !job.when?.branch, skip: !canExecWhenStatus(upstreamStatus, job.when?.status) || !canExecWhenBranch(pipeline.commit.branch, job.when?.branch) },
+    { ignore: !job.when?.tag, skip: !canExecWhenStatus(upstreamStatus, job.when?.status) || !canExecWhenTag(pipeline.commit.tag, job.when?.tag) },
+    { ignore: !job.when?.path, skip: !canExecWhenStatus(upstreamStatus, job.when?.status) || !canExecWhenPath(pipeline.commit.pathsChanged, job.when?.path) },
+  ];
+  logger.debug(`skips: ${JSON.stringify(skips)}`);
 
-  const skip = skipBranch ? skipTags : skipBranch; // skipBranch or skipTags
-
+  const notIgnored = skips.filter(f => !f.ignore);
+  const skip = notIgnored.length === 0 ? false : !notIgnored.some(s => !s.skip);
   if (skip) {
     logger.debug(`Skipping job ${chalk.blue(job.name)} as its upstream status ${chalk.blue(upstreamStatus)}`);
   }

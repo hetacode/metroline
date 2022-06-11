@@ -216,6 +216,7 @@ export class Gitlab implements GitServer {
       message: branch.commit.message,
       author: branch.commit.author_name,
       branch: branch.name,
+      pathsChanged: [], // TODO
       tag: '', // TODO
       protectedBranch: branch.protected,
     };
@@ -301,6 +302,7 @@ export class Gitlab implements GitServer {
         message: commit.title,
         author: payload.user_username,
         branch: branchName,
+        pathsChanged: [], // TODO
         tag: '', // TODO
         protectedBranch: branch.protected,
       },

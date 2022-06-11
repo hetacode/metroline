@@ -1,5 +1,6 @@
 import { canExecWhenBranch } from './can-exec-when-branch';
 import { canExecWhenTag } from './can-exec-when-tag';
+import { canExecWhenPath } from './can-exec-when-path';
 
 describe('canExecWhenBranch', () => {
   afterEach(() => jest.restoreAllMocks());
@@ -151,6 +152,106 @@ describe('canExecWhenTag', () => {
 
     it('should be false when some pattern matches', async () => {
       const filter = canExecWhenTag('build-1', { exclude: ['build.*'] });
+      expect(filter).toEqual(false);
+    });
+  });
+});
+
+describe('canExecWhenPath', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  describe('simple array', () => {
+    it('should be true when array is not defined', async () => {
+      const filter = canExecWhenPath(['main.go'], undefined);
+      expect(filter).toEqual(true);
+    });
+
+    it('should be true when array is empty', async () => {
+      const filter = canExecWhenPath(['main.go'], []);
+      expect(filter).toEqual(true);
+    });
+
+    it('should be false no pattern patch', async () => {
+      const filter = canExecWhenPath(['doc/readme.md'], ['app\/.*']);
+      expect(filter).toEqual(false);
+    });
+
+    it('should be false when looking for exactly file pathj', async () => {
+      const filter = canExecWhenPath(['doc/readme.md'], ['^app\/main.go$']);
+      expect(filter).toEqual(false);
+    });
+
+    it('should be true when some pattern matches', async () => {
+      const filter = canExecWhenPath(['doc/readme.md', 'app/main.go'], ['^app\/.*']);
+      expect(filter).toEqual(true);
+    });
+
+    it('should be true when some pattern matches', async () => {
+      const filter = canExecWhenPath(['doc/readme.md', 'main.go'], ['^app\/.*', '^doc\/.*']);
+      expect(filter).toEqual(true);
+    });
+  });
+
+  describe('include', () => {
+    it('should be true when array is not defined', async () => {
+      const filter = canExecWhenPath(['main.go'], { include: undefined });
+      expect(filter).toEqual(true);
+    });
+
+    it('should be true when array is empty', async () => {
+      const filter = canExecWhenPath(['main.go'], { include: [] });
+      expect(filter).toEqual(true);
+    });
+
+    it('should be false no pattern patch', async () => {
+      const filter = canExecWhenPath(['doc/readme.md'], { include: ['app\/.*'] });
+      expect(filter).toEqual(false);
+    });
+
+    it('should be false when looking for exactly file pathj', async () => {
+      const filter = canExecWhenPath(['doc/readme.md'], { include: ['^app\/main.go$'] });
+      expect(filter).toEqual(false);
+    });
+
+    it('should be true when some pattern matches', async () => {
+      const filter = canExecWhenPath(['doc/readme.md', 'app/main.go'], { include: ['^app\/.*'] });
+      expect(filter).toEqual(true);
+    });
+
+    it('should be true when some pattern matches', async () => {
+      const filter = canExecWhenPath(['doc/readme.md', 'main.go'], { include: ['^app\/.*', '^doc\/.*'] });
+      expect(filter).toEqual(true);
+    });
+  });
+
+  describe('exclude', () => {
+    it('should be true when array is not defined', async () => {
+      const filter = canExecWhenPath(['main.go'], { exclude: undefined });
+      expect(filter).toEqual(true);
+    });
+
+    it('should be true when array is empty', async () => {
+      const filter = canExecWhenPath(['main.go'], { exclude: [] });
+      expect(filter).toEqual(true);
+    });
+
+    it('should be true no pattern patch', async () => {
+      const filter = canExecWhenPath(['doc/readme.md'], { exclude: ['app\/.*'] });
+      expect(filter).toEqual(true);
+    });
+
+    it('should be true when looking for exactly file pathj', async () => {
+      const filter = canExecWhenPath(['doc/readme.md'], { exclude: ['^app\/main.go$'] });
+      expect(filter).toEqual(true);
+    });
+
+    it('should be false when some pattern matches', async () => {
+      const filter = canExecWhenPath(['doc/readme.md', 'app/main.go'], { exclude: ['^app\/.*'] });
+      expect(filter).toEqual(false);
+    });
+
+    it('should be false when some pattern matches', async () => {
+      const filter = canExecWhenPath(['doc/readme.md', 'main.go'], { exclude: ['^app\/.*', '^doc\/.*'] });
       expect(filter).toEqual(false);
     });
   });

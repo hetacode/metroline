@@ -19,6 +19,9 @@ export interface Commit {
   author: Author;
   committer: Committer;
   timestamp: Date;
+  added: string[];
+  removed: string[];
+  modified: string[];
 }
 
 export interface Owner {

@@ -180,6 +180,7 @@ export class Github implements GitServer {
       message: branch.commit.commit.message,
       author: branch.commit.author?.login || branch.commit.commit.author.name,
       branch: branch.name,
+      pathsChanged: [], // TODO
       tag: '', // TODO
       protectedBranch: branch.protected,
     };
@@ -275,6 +276,7 @@ export class Github implements GitServer {
         gitSshUrl: payload.repository.ssh_url,
         message: commit.message,
         branch: branchName,
+        pathsChanged: [], // TODO
         tag: '', // TODO
         protectedBranch: branch.protected,
         author: payload.sender.login,
