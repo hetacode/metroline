@@ -29,6 +29,7 @@ const $optionalScript = array().min(0).items(string());
 
 const $ciConfig = object({
   version: string().required().allow('1'),
+  name: string().required(),
   env: $env,
   docker: object({ auth: string() }),
   image: string(),

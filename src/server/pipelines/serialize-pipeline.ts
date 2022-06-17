@@ -3,6 +3,7 @@ import { Pipeline } from '../../commons/types/pipeline';
 export function serializePipeline(pipeline: Pipeline) {
   return {
     _id: pipeline._id,
+    name: pipeline.name,
     duration: pipeline.duration,
     cancelledAt: pipeline.cancelledAt,
     end: pipeline.end,

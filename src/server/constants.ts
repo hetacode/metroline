@@ -1,5 +1,6 @@
 import { AsyncValidationOptions } from 'joi';
 
+export const CI_DIRECTORY_NAME = '.metroline';
 export const CI_YAML_FILE_NAME = '.metroline.yml';
 export const CLONE_JOB_NAME = 'clone';
 export const DEPLOY_KEY_TITLE = 'Metroline';

@@ -47,7 +47,7 @@ export async function exec(container: Container, cmd: string[], log: RunLogger) 
 
   const execStream = await containerExec.start({ hijack: true });
 
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     execStream.on('data', data => {
       const buffers = splitFrames(data);
       logger.debug(buffers);

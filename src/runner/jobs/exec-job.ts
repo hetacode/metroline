@@ -18,6 +18,7 @@ import { Logger } from '../../commons/logger/logger';
 import { hasVolume } from '../docker/has-volume';
 import { hideSecretsFromLog } from '../../commons/jobs/hide-secrets-from-log';
 import { env } from '../env';
+import { CLONE_JOB_NAME } from '../../server/constants';
 
 const logger = new Logger('metroline.runner:execJob');
 const jobLogger = new Logger('metroline.runner:execJob.log');
@@ -112,6 +113,24 @@ export async function execJob(job: Job) {
 
     await exec(container, [job.bin, '-c', script.join('\n')], runLogger);
 
+    const filesFromDirectories: string[] = [];
+    const execOutput = (dirPath: string): RunLogger => (chunk, streamType) => {
+      const filenames = chunk.toString().trim().split('\n');
+      filenames.forEach(filename => filesFromDirectories.push(`${dirPath}/${filename}`));
+    };
+
+    await Promise.all((job.extractDirectoryFromContainer ?? []).map(async dirPath => {
+      // List directory
+      await exec(container, [job.bin, '-c', `ls -A1 ${dirPath}`], execOutput(dirPath));
+    }));
+
+    jobLogger.debug(`filesFromDirectories: ${JSON.stringify(filesFromDirectories)}`);
+
+    if (filesFromDirectories.length !== 0) {
+      job.extractFileFromContainer = job.extractFileFromContainer ?? []; // TODO: ??=
+      job.extractFileFromContainer?.push(...filesFromDirectories);
+    }
+
     if (job.extractFileFromContainer && job.extractFileFromContainer.length !== 0) {
       const buffers = await Promise.all(
         job.extractFileFromContainer.map(file => getFileFromContainer(container, file)),
@@ -120,7 +139,12 @@ export async function execJob(job: Job) {
       job.extractFileFromContainer.forEach((file, index) => {
         files[file] = buffers[index].toString();
       });
+      jobLogger.debug(`extractFileFromContainer: ${JSON.stringify(files)}`);
       Server.filesExtractedFromContainer({ jobId, files });
+    }
+
+    if (!job.isPreparationJob && job.name === CLONE_JOB_NAME) {
+      Server.processCiConfig({ jobId });
     }
 
     Server.setJobStatus({ jobId, status: 'success' });
