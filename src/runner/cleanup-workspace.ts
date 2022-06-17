@@ -19,7 +19,7 @@ function waitForContainerToBeRemoved(containerId: string) {
       reject(new Error(`Timed out waiting for container ${containerId}`));
     }, timoutForContainerWait);
   });
-  const containerRemoved = new Promise(resolve => {
+  const containerRemoved = new Promise<void>(resolve => {
     onContainerRemoved.on(containerId, () => resolve());
   });
   return Promise.race([

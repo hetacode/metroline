@@ -61,6 +61,12 @@ export interface ExtractedFilesFromContainerEvent {
   }
 }
 
+export const EVENT_PROCESS_CI_CONFIG = 'EVENT_PROCESS_CI_CONFIG';
+
+export interface ProcessCIConfigEvent {
+  jobId: string;
+}
+
 export const EVENT_CLEANUP_WORKSPACE = 'EVENT_CLEANUP_WORKSPACE';
 
 export interface CleanupWorkspaceEvent {

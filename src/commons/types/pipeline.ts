@@ -15,6 +15,7 @@ export type PipelineStatus =
 
 export interface Pipeline {
   _id?: ObjectId;
+  name?: string;
   repoId: string;
   createdAt: Date;
   status: PipelineStatus;
@@ -23,6 +24,7 @@ export interface Pipeline {
   duration?: Duration;
   commit: Commit;
   ciConfig?: CiConfig;
+  ciPlainConfig?: string;
   error?: string;
   cancelledAt?: Date;
 }

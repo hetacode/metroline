@@ -49,6 +49,7 @@ export interface DockerSettings {
 
 export interface CiConfig {
   version: string;
+  name: string;
   env?: Env;
   docker?: DockerSettings;
   image?: string;

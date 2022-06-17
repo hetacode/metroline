@@ -18,6 +18,7 @@ import { updateDownstreamJob } from '../jobs/update-downstream-job';
 import { skipJobsBasedOnConditions } from './skip-jobs-based-on-conditions';
 import { hideSecretsFromLog } from '../../commons/jobs/hide-secrets-from-log';
 import { prepareSecrets } from './prepare-secrets';
+import { insertPipeline, deletePipeline } from '../pipelines/create-pipeline';
 
 const logger = new Logger('metroline.server:processCiConfig');
 
@@ -72,12 +73,43 @@ function initPipelineJobs(
     });
 }
 
-export async function processCiConfig(jobId: string, plainConfig: string) {
-  logger.debug(`Processing CI config for job ${jobId}`, JSON.stringify(plainConfig));
+export async function preparePipelineCloneJobs(jobId: string, plainConfigs: string[]) {
+  const mainCloneJob = await Jobs().findOne({ _id: ObjectId.createFromHexString(jobId) });
+  if (!mainCloneJob.isPreparationJob) {
+    return;
+  }
+  const mainPipeline = await Pipelines().findOne({ _id: ObjectId.createFromHexString(mainCloneJob.pipelineId) });
 
+  await Promise.all(plainConfigs.map(async plainConfig => {
+    const ciConfig = parseConfig(plainConfig);
+    logger.debug(`mainCloneJob: ${JSON.stringify(mainCloneJob)}`);
+    const cloneJob = JSON.parse(JSON.stringify(mainCloneJob)) as Job;
+    delete cloneJob._id;
+    delete cloneJob.runnerId;
+    delete cloneJob.workspace;
+    cloneJob.status = 'created';
+
+    let pipeline = JSON.parse(JSON.stringify(mainPipeline)) as Pipeline;
+    delete pipeline._id;
+    pipeline.name = ciConfig.name;
+    pipeline.ciPlainConfig = plainConfig;
+    pipeline = await insertPipeline(pipeline);
+    cloneJob.pipelineId = pipeline._id.toHexString();
+    cloneJob.isPreparationJob = false;
+    await addJobs(pipeline._id, [cloneJob]);
+  }));
+
+  await deletePipeline(mainPipeline);
+}
+
+export async function processCiConfig(jobId: string) {
   const cloneJob = await Jobs().findOne({ _id: ObjectId.createFromHexString(jobId) });
   const pipeline = await Pipelines().findOne({ _id: ObjectId.createFromHexString(cloneJob.pipelineId) });
   const repoSecrets = await Secrets().find({ repoId: pipeline.repoId }).toArray();
+  const plainConfig = pipeline.ciPlainConfig;
+
+  logger.debug(`New pipeline for ciConfig: ${JSON.stringify(pipeline)}`);
+  logger.debug(`Processing CI config for job ${jobId}`, JSON.stringify(plainConfig));
 
   const secrets: Env = prepareSecrets(pipeline, repoSecrets);
 
@@ -91,6 +123,8 @@ export async function processCiConfig(jobId: string, plainConfig: string) {
       throw new Error(`Invalid ci config:\n${errors.join('\n')}`);
     }
 
+    pipeline.name = ciConfig.name;
+
     const configJobs = initPipelineJobs(pipeline, ciConfig, secrets, cloneJob);
 
     skipJobsBasedOnConditions(pipeline, [cloneJob, ...configJobs]);
@@ -101,7 +135,10 @@ export async function processCiConfig(jobId: string, plainConfig: string) {
 
     // make sure to fetch from the db again so we have the latest status of the clone job
     const pipelineJobs = await Jobs().find({ pipelineId: pipeline._id.toHexString() }).toArray();
+    // pipelineJobs = [cloneJob, ...pipelineJobs];
+    logger.debug(`pipelineJobs for pipelineId: ${pipeline._id.toHexString()}: ${JSON.stringify(pipelineJobs)}`);
     const downstreamJobs = await getChildren(cloneJob, pipelineJobs);
+    logger.debug(`downstreamJobs for pipelineId: ${pipeline._id.toHexString()}: ${JSON.stringify(downstreamJobs)}`);
     await Promise.all(
       downstreamJobs.map(downstreamJob => updateDownstreamJob(downstreamJob, pipelineJobs, pipeline)),
     );

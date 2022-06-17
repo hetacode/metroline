@@ -15,6 +15,7 @@ describe('validateConfig', () => {
   it('should return error when a job has no image and there is NO global image', async () => {
     const errors = await validateConfig({
       version: '1',
+      name: 'ci',
       jobs: { test: { script: ['test'] } },
     });
 
@@ -24,6 +25,7 @@ describe('validateConfig', () => {
   it('should be valid when a job has no image and there IS a global image', async () => {
     const errors = await validateConfig({
       version: '1',
+      name: 'ci',
       image: 'alpine',
       jobs: { test: { script: ['test'] } },
     });
@@ -34,6 +36,7 @@ describe('validateConfig', () => {
   it('should return error when a dependency does not exist', async () => {
     const errors = await validateConfig({
       version: '1',
+      name: 'ci',
       image: 'alpine',
       jobs: {
         test: {
@@ -49,6 +52,7 @@ describe('validateConfig', () => {
   it('should return no error when job dependencies exist', async () => {
     const errors = await validateConfig({
       version: '1',
+      name: 'ci',
       image: 'alpine',
       jobs: {
         test: {
@@ -65,6 +69,7 @@ describe('validateConfig', () => {
   it('should return error when there are direct cyclic dependencies', async () => {
     const errors = await validateConfig({
       version: '1',
+      name: 'ci',
       image: 'alpine',
       jobs: {
         test: {
@@ -80,6 +85,7 @@ describe('validateConfig', () => {
   it('should return error when there are INdirect cyclic dependencies', async () => {
     const errors = await validateConfig({
       version: '1',
+      name: 'ci',
       image: 'alpine',
       jobs: {
         dep1: {
@@ -107,6 +113,7 @@ describe('validateConfig', () => {
   it('should return no error when there are no cyclic dependencies in multi branch graph', async () => {
     const config = {
       version: '1',
+      name: 'ci',
       image: 'node:12-alpine',
       jobs: {
         build: { script: ['str'] },
@@ -135,6 +142,7 @@ describe('validateConfig', () => {
   it('should return no error when there are no cyclic dependencies', async () => {
     const errors = await validateConfig({
       version: '1',
+      name: 'ci',
       image: 'alpine',
       jobs: {
         build: { script: ['build'] },

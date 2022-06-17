@@ -16,6 +16,8 @@ import {
   SetJobStartEvent,
   SetJobStatusEvent,
   SetJobWorkspaceEvent,
+  ProcessCIConfigEvent,
+  EVENT_PROCESS_CI_CONFIG,
 } from '../commons/runners/events';
 import { Job } from '../commons/types/job';
 import { env } from './env';
@@ -82,5 +84,9 @@ export class Server {
 
   static filesExtractedFromContainer(data: ExtractedFilesFromContainerEvent) {
     socket.emit(EVENT_EXTRACTED_FILES_FROM_CONTAINER, data);
+  }
+
+  static processCiConfig(data: ProcessCIConfigEvent) {
+    socket.emit(EVENT_PROCESS_CI_CONFIG, data);
   }
 }

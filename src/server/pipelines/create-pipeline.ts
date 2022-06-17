@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { io } from '../socket/socket';
+import { readdirSync } from 'fs';
 import { Repo, Repos, repoSocketRoom } from '../repos/repo';
 import { Commit } from '../../commons/types/commit';
 import { Pipelines } from './pipelines';
@@ -11,6 +12,7 @@ import { CLONE_JOB_NAME } from '../constants';
 import { Logger } from '../../commons/logger/logger';
 import { setRepoLastUpdate } from '../repos/set-repo-last-update';
 import { shouldSkipCommit } from './should-skip-commit';
+import { Jobs } from '../jobs/jobs';
 
 const logger = new Logger('metroline.server:create-pipeline');
 
@@ -24,6 +26,7 @@ export function createCloneJob(
   const sshPrivateKeyEnvVar = 'SSH_PRIVATE_KEY';
   return {
     pipelineId,
+    isPreparationJob: true,
     bin: '/bin/sh',
     image: 'metroline/clone:next',
     index: 0,
@@ -41,13 +44,17 @@ export function createCloneJob(
       'git config core.sshCommand \'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\'',
       `git checkout ${commitSha} --quiet`,
     ],
-    extractFileFromContainer: [
-      CI_CONFIG_PATH,
-    ],
+    extractDirectoryFromContainer: [CI_CONFIG_PATH],
   };
 }
 
-async function insertPipeline(pipeline: Pipeline): Promise<Pipeline> {
+export async function deletePipeline(pipeline: Pipeline): Promise<void> {
+  await Pipelines().deleteOne({ _id: pipeline._id });
+  await Jobs().deleteMany({ pipelineId: pipeline._id.toHexString() });
+  io.to(repoSocketRoom(pipeline.repoId)).emit(`repo.${pipeline.repoId}.deletePipeline`, pipeline._id.toHexString());
+}
+
+export async function insertPipeline(pipeline: Pipeline): Promise<Pipeline> {
   logger.debug('pipeline', pipeline);
   return Pipelines()
     .insertOne(pipeline)

@@ -13,6 +13,7 @@ export type JobStatus =
 
 export interface Job {
   _id?: ObjectId;
+  isPreparationJob: boolean;
   createdAt?: Date;
   pipelineId: string;
   allowFailure?: boolean;
@@ -33,6 +34,7 @@ export interface Job {
   duration?: Duration;
   dependencies?: string[];
   extractFileFromContainer?: string[];
+  extractDirectoryFromContainer?: string[];
   runnerId?: string;
   cancelledAt?: Date;
 }

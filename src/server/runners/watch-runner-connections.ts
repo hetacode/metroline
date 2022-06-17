@@ -17,6 +17,8 @@ import {
   SetJobStartEvent,
   SetJobStatusEvent,
   SetJobWorkspaceEvent,
+  EVENT_PROCESS_CI_CONFIG,
+  ProcessCIConfigEvent,
 } from '../../commons/runners/events';
 import { setJobStart } from '../jobs/set-job-start';
 import { setJobEnd } from '../jobs/set-job-end';
@@ -25,9 +27,10 @@ import { addJobLog } from '../job-logs/add-job-log';
 import { Runner, runnerRegistry } from './runner';
 import { setJobWorkspace } from '../jobs/set-job-workspace';
 import { pullJob } from './pull-job';
-import { extractedFilesFromContainer } from './extracted-files-from-container';
+import { extractedFilesFromContainerEventHandler } from './extracted-files-from-container-event-handler';
 import { Logger } from '../../commons/logger/logger';
 import { env } from '../env';
+import { processCIConfigEventHandler } from './process-ci-config-event-handler';
 
 const logger = new Logger('metroline.server:watchRunnerConnections');
 
@@ -47,7 +50,8 @@ export function watchRunnerConnections() {
         pullJob(socket.id, callback1)
           .catch(err => logger.error('Could not pull job', err))
       ));
-      socket.on(EVENT_EXTRACTED_FILES_FROM_CONTAINER, (args: ExtractedFilesFromContainerEvent) => extractedFilesFromContainer(args));
+      socket.on(EVENT_EXTRACTED_FILES_FROM_CONTAINER, (args: ExtractedFilesFromContainerEvent) => extractedFilesFromContainerEventHandler(args));
+      socket.on(EVENT_PROCESS_CI_CONFIG, (args: ProcessCIConfigEvent) => processCIConfigEventHandler(args));
       socket.on(EVENT_JOB_WORKSPACE, (args: SetJobWorkspaceEvent) => setJobWorkspace(args.jobId, args.workspace));
       socket.on(EVENT_JOB_START, (args: SetJobStartEvent) => setJobStart(args.jobId, args.date));
       socket.on(EVENT_JOB_END, (args: SetJobEndEvent) => setJobEnd(args.jobId, args.date, args.duration));
