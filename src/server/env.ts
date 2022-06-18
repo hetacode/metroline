@@ -24,6 +24,7 @@ export interface Env {
   METROLINE_HOST: string;
   METROLINE_WEBHOOK_HOST: string;
   METROLINE_MIGRATE_ROLLBACK: boolean;
+  METROLINE_CLONE_IMAGE: string;
   METROLINE_JOB_TIMEOUT: number;
   METROLINE_RUNNER_SECRET: string;
   METROLINE_GLOBAL_SECRETS: GlobalSecret[];
@@ -71,6 +72,7 @@ const envSpec: EnvSpec = {
   },
   METROLINE_HOST: { schema: string().required() },
   METROLINE_WEBHOOK_HOST: { schema: string() },
+  METROLINE_CLONE_IMAGE: { schema: string().default('metroline/clone:next') },
   METROLINE_MONGO_URI: { schema: string() },
   METROLINE_MIGRATE_ROLLBACK: {
     transform: stringToBoolean(),

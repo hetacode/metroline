@@ -1,6 +1,5 @@
 import { ObjectId } from 'mongodb';
 import { io } from '../socket/socket';
-import { readdirSync } from 'fs';
 import { Repo, Repos, repoSocketRoom } from '../repos/repo';
 import { Commit } from '../../commons/types/commit';
 import { Pipelines } from './pipelines';
@@ -13,6 +12,7 @@ import { Logger } from '../../commons/logger/logger';
 import { setRepoLastUpdate } from '../repos/set-repo-last-update';
 import { shouldSkipCommit } from './should-skip-commit';
 import { Jobs } from '../jobs/jobs';
+import { env } from '../env';
 
 const logger = new Logger('metroline.server:create-pipeline');
 
@@ -28,7 +28,7 @@ export function createCloneJob(
     pipelineId,
     isPreparationJob: true,
     bin: '/bin/sh',
-    image: 'metroline/clone:next',
+    image: env.METROLINE_CLONE_IMAGE,
     index: 0,
     status: 'created',
     name: CLONE_JOB_NAME,
