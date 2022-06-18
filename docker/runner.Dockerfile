@@ -1,4 +1,4 @@
-FROM node:12-alpine AS build
+FROM node:16-alpine AS build
 
 COPY ./ /repo/
 
@@ -9,7 +9,7 @@ RUN apk add --no-cache git \
   && npm run build \
   && npm prune --production
 
-FROM node:12-alpine
+FROM node:16-alpine
 
 COPY --from=build /repo/dist/runner.js /app/dist/
 COPY --from=build /repo/dist/runner.js.map /app/dist/

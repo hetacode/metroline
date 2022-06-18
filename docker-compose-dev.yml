@@ -13,7 +13,7 @@ services:
       - "222:22"
 
   mongo:
-    image: mongo:4.2-bionic
+    image: mongo:5.0.9
     restart: unless-stopped
     volumes:
       - metroline-mongo:/data/db
