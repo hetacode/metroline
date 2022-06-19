@@ -87,10 +87,12 @@ export async function preparePipelineCloneJobs(jobId: string, plainConfigs: stri
     delete cloneJob._id;
     delete cloneJob.runnerId;
     delete cloneJob.workspace;
+    cloneJob.createdAt = new Date();
     cloneJob.status = 'created';
 
     let pipeline = JSON.parse(JSON.stringify(mainPipeline)) as Pipeline;
     delete pipeline._id;
+    pipeline.createdAt = new Date();
     pipeline.name = ciConfig.name;
     pipeline.ciPlainConfig = plainConfig;
     pipeline = await insertPipeline(pipeline);
