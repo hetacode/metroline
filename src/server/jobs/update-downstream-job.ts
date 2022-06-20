@@ -34,14 +34,16 @@ export async function updateDownstreamJob(job: Job, jobs: Job[], pipeline: Pipel
   //
   // If branch is set to skip, try check tag condition
   const skips: { ignore: boolean, skip: boolean }[] = [
-    { ignore: !job.when?.branch, skip: !canExecWhenStatus(upstreamStatus, job.when?.status) || !canExecWhenBranch(pipeline.commit.branch, job.when?.branch) },
-    { ignore: !job.when?.tag, skip: !canExecWhenStatus(upstreamStatus, job.when?.status) || !canExecWhenTag(pipeline.commit.tag, job.when?.tag) },
-    { ignore: !job.when?.path, skip: !canExecWhenStatus(upstreamStatus, job.when?.status) || !canExecWhenPath(pipeline.commit.pathsChanged, job.when?.path) },
+    { ignore: false, skip: !canExecWhenStatus(upstreamStatus, job.when?.status) }, // status should be check always
+    { ignore: !job.when?.branch, skip: !canExecWhenBranch(pipeline.commit.branch, job.when?.branch) },
+    { ignore: !job.when?.tag, skip: !canExecWhenTag(pipeline.commit.tag, job.when?.tag) },
+    { ignore: !job.when?.path, skip: !canExecWhenPath(pipeline.commit.pathsChanged, job.when?.path) },
   ];
-  logger.debug(`skips: ${JSON.stringify(skips)}`);
+  logger.debug(`skips for job ${job.name}: ${JSON.stringify(skips)}`);
 
   const notIgnored = skips.filter(f => !f.ignore);
   const skip = notIgnored.length === 0 ? false : !notIgnored.some(s => !s.skip);
+
   if (skip) {
     logger.debug(`Skipping job ${chalk.blue(job.name)} as its upstream status ${chalk.blue(upstreamStatus)}`);
   }

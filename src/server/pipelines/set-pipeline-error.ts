@@ -12,5 +12,5 @@ export async function setPipelineError(pipelineId: string, error: string): Promi
     .emit(`pipeline.${pipelineId}.error`, error);
 
   await setPipelineStatus(pipelineId, 'failure');
-  await setPipelineEnd(pipelineId, new Date());
+  setPipelineEnd(pipelineId, new Date());
 }
