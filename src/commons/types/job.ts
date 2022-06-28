@@ -21,6 +21,7 @@ export interface Job {
   bin?: string;
   env?: Env;
   when?: WhenConditions;
+  if?: string;
   hideFromLogs?: string[];
   index?: number;
   image: string;

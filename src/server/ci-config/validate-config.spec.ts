@@ -9,7 +9,10 @@ describe('validateConfig', () => {
   it('should return error when input is invalid', async () => {
     const errors = await validateConfig(<any>{ version: '1' });
 
-    expect(errors).toEqual(['jobs: "jobs" is required']);
+    expect(errors).toEqual([
+      'name: "name" is required',
+      'jobs: "jobs" is required'
+    ]);
   });
 
   it('should return error when a job has no image and there is NO global image', async () => {

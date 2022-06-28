@@ -4,13 +4,14 @@ import { Jobs } from '../jobs/jobs';
 import { computePipelineStatus } from './compute-pipeline-status';
 import { Logger } from '../../commons/logger/logger';
 import { setPipelineStatus } from './set-pipeline-status';
+import { CLONE_JOB_NAME } from '../constants';
 
 const logger = new Logger('metroline.server:updatePipelineStatus');
 
 export async function updatePipelineStatus(pipelineId: string): Promise<void> {
   const jobs = await Jobs().find({ pipelineId }).toArray();
 
-  const status = computePipelineStatus(jobs);
+  let status = computePipelineStatus(jobs);
 
   const onlyHasSucceededCloneJob = jobs.length === 1 && status === 'success';
 
@@ -23,6 +24,13 @@ export async function updatePipelineStatus(pipelineId: string): Promise<void> {
     const jobStatuses = jobs.map(j => `${chalk.blue(j.name)}:${chalk.bold.blue(j.status)}`).join(',');
     logger.debug(`Setting end of pipeline ${chalk.blue(pipelineId)} with status ${chalk.blue(status)}; job statuses are ${jobStatuses}`);
     setPipelineEnd(pipelineId, new Date());
+
+    // Check if exists any job with non-skipped status - if false it's means that all jobs are skipped
+    const onlyHasSkippedJobs = !jobs.filter(f => f.name !== CLONE_JOB_NAME).some(s => s.status !== 'skipped');
+    if (onlyHasSkippedJobs) {
+      // Set pipeline as 'skipped'
+      status = 'skipped';
+    }
   }
 
   if (onlyHasSucceededCloneJob) {

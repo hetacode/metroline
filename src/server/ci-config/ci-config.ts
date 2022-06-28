@@ -37,6 +37,7 @@ export interface Job {
   script: string[];
   dependencies?: string[];
   when?: WhenConditions;
+  if?: string;
 }
 
 export interface CiConfigJobs {

@@ -55,6 +55,7 @@ function initPipelineJobs(
           ...createSystemProvidedEnv(pipeline),
         },
         when: job.when,
+        if: job.if,
         hideFromLogs: Object.values(secrets),
         name: jobKey,
         image: job.image || ciConfig.image,

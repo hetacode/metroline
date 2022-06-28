@@ -18,6 +18,7 @@ const $job = object({
   env: $env,
   script: array().required().min(1).items(string()),
   dependencies: array().items(string()),
+  if: string(),
   when: object({
     propagate: boolean().default(false),
     branch: $condition,
