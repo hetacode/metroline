@@ -5,6 +5,8 @@ import { canExecWhenBranch } from './conditions/can-exec-when-branch';
 import { Logger } from '../../commons/logger/logger';
 import { canExecWhenTag } from './conditions/can-exec-when-tag';
 import { canExecWhenPath } from './conditions/can-exec-when-path';
+import { setJobStatus } from '../jobs/set-job-status';
+import { ifConditionSkipJob, IfConditionSkipError } from '../jobs/if-condition-skip-job';
 
 const logger = new Logger('metroline.server:skipJobsBasedOnConditions');
 
@@ -30,7 +32,19 @@ export function skipJobsBasedOnConditions(pipeline: Pipeline, jobs: Job[]) {
     ];
 
     const notIgnored = skips.filter(f => !f.ignore);
-    const skip = notIgnored.length === 0 ? false : !notIgnored.some(s => !s.skip);
+    let skip = notIgnored.length === 0 ? false : !notIgnored.some(s => !s.skip);
+
+    if (job.if) {
+      const result = ifConditionSkipJob(job);
+      if (result instanceof IfConditionSkipError) {
+        setJobStatus(job._id.toHexString(), 'failure')
+          .catch(err => logger.error(err));
+        return;
+      }
+
+      skip = result;
+    }
+
     if (skip) {
       job.status = 'skipped';
       if (job.when?.propagate) {
