@@ -45,7 +45,8 @@ export async function updateDownstreamJob(job: Job, jobs: Job[], pipeline: Pipel
   const notIgnored = skips.filter(f => !f.ignore);
   let skip = notIgnored.length === 0 ? false : !notIgnored.some(s => !s.skip);
 
-  if (job.if) {
+  // Should check 'if' is 'when' is false
+  if (job.if && !skip) {
     const result = ifConditionSkipJob(job);
     if (result instanceof IfConditionSkipError) {
       setJobStatus(job._id.toHexString(), 'failure')
